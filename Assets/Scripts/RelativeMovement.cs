@@ -8,7 +8,7 @@ public class RelativeMovement : MonoBehaviour
     private const string Vertical = "Vertical";
     private const string Jump = "Jump";
 
-    private static readonly int JumpHash = Animator.StringToHash("Jump");
+    private static readonly int JumpingHash = Animator.StringToHash("IsJumping");
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
 
     private const float Gravity = -9.8f;
@@ -36,6 +36,9 @@ public class RelativeMovement : MonoBehaviour
 
     [SerializeField]
     private float _characterHeightDivider = 1.9f;
+
+    [SerializeField]
+    private float _pushForce = 3.0f;
 
     private float _verticalSpeed;
     private CharacterController _characterController;
@@ -90,11 +93,11 @@ public class RelativeMovement : MonoBehaviour
             if (Input.GetButtonDown(Jump))
             {
                 _verticalSpeed = _jumpForce;
-                _animator.SetTrigger(Jump);
             }
             else
             {
                 _verticalSpeed = _minimalFallSpeed;
+                _animator.SetBool(JumpingHash, false);
             }
         }
         else
@@ -104,6 +107,11 @@ public class RelativeMovement : MonoBehaviour
             if (_verticalSpeed < _terminalVelocity) 
             {
                 _verticalSpeed = _terminalVelocity;
+            }
+
+            if (_contact != null)
+            {
+                _animator.SetBool(JumpingHash, true);
             }
 
             if (_characterController.isGrounded)
@@ -128,6 +136,13 @@ public class RelativeMovement : MonoBehaviour
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
         _contact = hit;
+
+        Rigidbody rigidbody = hit.collider.attachedRigidbody;
+
+        if (rigidbody != null && rigidbody.isKinematic == false) 
+        {
+            rigidbody.velocity = hit.moveDirection * _pushForce;
+        }
     }
 
     private void OnDrawGizmos()
